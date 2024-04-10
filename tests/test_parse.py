@@ -133,6 +133,36 @@ def test_error_malformed_tag(parse):
         parse("<a")
 
 
+def test_process_namespaces(parse):
+    xml = """
+        <root xmlns="http://defaultns.com/"
+              xmlns:a="http://a.com/"
+              xmlns:b="http://b.com/"
+              version="1.00">
+          <x a:attr="val">1</x>
+          <a:y>2</a:y>
+          <b:z>3</b:z>
+        </root>
+        """
+    target = {
+        "http://defaultns.com/:root": {
+            "@version": "1.00",
+            "@xmlns": {
+                "": "http://defaultns.com/",
+                "a": "http://a.com/",
+                "b": "http://b.com/",
+            },
+            "http://defaultns.com/:x": {
+                "@http://a.com/:attr": "val",
+                "#text": "1",
+            },
+            "http://a.com/:y": "2",
+            "http://b.com/:z": "3",
+        },
+    }
+    assert parse(xml, process_namespaces=True) == target
+
+
 @pytest.fixture
 def data_dir():
     return Path(__file__).parent / "data"

@@ -67,7 +67,7 @@ fn update_mapping(mapping: &mut JsonMapping, tag_name: String, value: Value) -> 
     Ok(())
 }
 
-pub fn _parse(xml: &str) -> Result<JsonMapping> {
+pub fn _parse(xml: &str, process_namespaces: bool) -> Result<JsonMapping> {
     let mut reader = Reader::from_str(xml);
     reader.trim_text(true);
 
@@ -112,7 +112,7 @@ pub fn _parse(xml: &str) -> Result<JsonMapping> {
                 }
 
                 if let Value::Mapping(m) = &mut sub_xml_mapping {
-                    m.extend(_parse(&(reader.read_text(e.name())?))?);
+                    m.extend(_parse(&(reader.read_text(e.name())?), process_namespaces)?);
                 }
 
                 if let Value::Mapping(m) = &sub_xml_mapping {
@@ -135,8 +135,11 @@ pub fn _parse(xml: &str) -> Result<JsonMapping> {
 }
 
 #[pyfunction]
-fn parse(py: Python, xml: &str) -> PyResult<PyObject> {
-    Ok(_parse(xml)?.to_object(py))
+fn parse(py: Python, xml: &str, process_namespaces: Option<bool>) -> PyResult<PyObject> {
+    match process_namespaces {
+        Some(process_namespaces) => Ok(_parse(xml, process_namespaces)?.to_object(py)),
+        None => Ok(_parse(xml, false)?.to_object(py)),
+    }
 }
 
 #[pymodule]
